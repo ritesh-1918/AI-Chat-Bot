@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Function AI Assistant</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --primary-dark: #2e6ab1;
+            --background-light: #f0f2f5;
+            --surface-light: #fff;
+            --text-dark: #333;
+            --text-light: #f4f4f4;
+            --message-user: #dcf8c6;
+            --message-ai: #e9e9eb;
+            --message-error: #ffebee;
+            --error-text: #c62828;
+            --border-color: #ddd;
+            --shadow-light: rgba(0,0,0,0.1);
+            --shadow-medium: rgba(0,0,0,0.2);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-light);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .chat-container {
+            width: 95%;
+            max-width: 700px;
+            height: 90vh;
+            min-height: 500px;
+            background: var(--surface-light);
+            border-radius: 12px;
+            box-shadow: 0 5px 25px var(--shadow-light);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+            color: var(--text-light);
+            padding: 16px;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: 600;
+            box-shadow: 0 2px 10px var(--shadow-light);
+        }
+
+        .chat-box {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+
+        .chat-box::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera*/
+        }
+
+        .message-wrapper {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .message-wrapper.user-message {
+            justify-content: flex-end;
+        }
+
+        .message-wrapper.ai-message {
+            justify-content: flex-start;
+        }
+
+        .avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 0.9em;
+            flex-shrink: 0;
+            box-shadow: 0 1px 5px var(--shadow-light);
+        }
+
+        .avatar.ai-avatar { background-color: #6750A4; }
+
+        .message-content {
+            display: flex;
+            flex-direction: column;
+            max-width: 80%;
+        }
+
+        .message {
+            padding: 12px 18px;
+            border-radius: 18px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            position: relative;
+            box-shadow: 0 1px 5px var(--shadow-light);
+        }
+
+        .user-message .message {
+            background-color: var(--message-user);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-message .message {
+            background-color: var(--message-ai);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.error {
+            background-color: var(--message-error);
+            color: var(--error-text);
+            font-weight: 500;
+        }
+
+        .message-info {
+            font-size: 0.75em;
+            color: #888;
+            margin-top: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-message .message-info { justify-content: flex-end; }
+        .ai-message .message-info { justify-content: flex-start; }
+
+        .timestamp { white-space: nowrap; }
+
+        .copy-btn,
+        .feedback-btn {
+            background: transparent;
+            border: 1px solid black;
+            color: black;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8em;
+            padding: 3px 6px;
+            transition: background-color 0.3s, color 0.3s, opacity 0.3s;
+            opacity: 0.5;
+            margin-left: 5px;
+        }
+
+        .copy-btn:hover,
+        .feedback-btn:hover {
+            opacity: 1;
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .copy-btn.copied {
+            background-color: #28a745;
+            color: white;
+            border-color: #28a745;
+            opacity: 1;
+        }
+
+        .feedback-buttons {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .feedback-btn.selected {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            opacity: 1;
+        }
+
+        .input-area {
+            padding: 15px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: var(--surface-light);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        #user-input {
+            flex-grow: 1;
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 22px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        #user-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+        }
+
+        #function-select {
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--background-light);
+            font-size: 16px;
+            color: var(--text-dark);
+            outline: none;
+            cursor: pointer;
+        }
+
+        #send-btn {
+            padding: 0 25px;
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 22px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        #send-btn:hover {
+            background-color: var(--primary-dark);
+            box-shadow: 0 2px 10px var(--shadow-medium);
+        }
+
+        #send-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        @media (max-width: 600px) {
+            .chat-container {
+                height: 100vh;
+                width: 100%;
+                border-radius: 0;
+            }
+            body { padding: 0; }
+            .controls { flex-direction: column; }
+            #send-btn { padding: 12px; border-radius: 8px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">Multi-Function AI Assistant</div>
+        <div class="chat-box" id="chat-box">
+            <div class="message-wrapper ai-message">
+                <div class="avatar ai-avatar">AI</div>
+                <div class="message-content">
+                    <div class="message ai">Hello! Please select a function and ask me anything.</div>
+                    <div class="message-info">
+                        <span class="timestamp"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="input-area">
+            <select id="function-select">
+                <option value="question">❓ Ask a Question</option>
+                <option value="summarize">📄 Summarize Text</option>
+                <option value="creative">✨ Generate Creative Content</option>
+            </select>
+            <div class="controls">
+                <input type="text" id="user-input" placeholder="Enter your text here...">
+                <button id="send-btn">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const functionSelect = document.getElementById('function-select');
+
+        function formatTimestamp(date) {
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+
+        async function sendMessage() {
+            const messageText = userInput.value.trim();
+            const functionType = functionSelect.value;
+            if (!messageText) return;
+
+            addMessageToUI(messageText, 'user');
+            userInput.value = '';
+            sendBtn.disabled = true;
+
+            try {
+                const response = await fetch('/send_message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: messageText,
+                        function: functionType
+                    })
+                });
+                const data = await response.json();
+                addMessageToUI(data.response || `Error: ${data.error}`, data.error ? 'error' : 'ai');
+            } catch (error) {
+                addMessageToUI('A network error occurred.', 'error');
+            } finally {
+                sendBtn.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        function addMessageToUI(text, sender) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.classList.add('message-wrapper', `${sender}-message`);
+
+            const avatar = document.createElement('div');
+            avatar.classList.add('avatar', `${sender}-avatar`);
+            avatar.innerText = sender === 'user' ? 'You' : 'AI';
+
+            const messageContent = document.createElement('div');
+            messageContent.classList.add('message-content');
+
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender);
+            messageDiv.innerText = text;
+
+            const messageInfo = document.createElement('div');
+            messageInfo.classList.add('message-info');
+
+            const timestampSpan = document.createElement('span');
+            timestampSpan.classList.add('timestamp');
+            timestampSpan.innerText = formatTimestamp(new Date());
+            messageInfo.appendChild(timestampSpan);
+
+            if (sender === 'ai' && !text.startsWith('Error:')) {
+                const copyButton = document.createElement('button');
+                copyButton.classList.add('copy-btn');
+                copyButton.innerHTML = '&#x2398;'; // Copy symbol
+                copyButton.title = 'Copy to clipboard';
+                copyButton.onclick = () => copyToClipboard(text, copyButton);
+                messageInfo.appendChild(copyButton);
+
+                const feedbackButtons = document.createElement('div');
+                feedbackButtons.classList.add('feedback-buttons');
+
+                const helpfulButton = document.createElement('button');
+                helpfulButton.classList.add('feedback-btn');
+                helpfulButton.innerHTML = '👍 Helpful';
+                helpfulButton.onclick = () => handleFeedback('helpful', helpfulButton, notHelpfulButton);
+                feedbackButtons.appendChild(helpfulButton);
+
+                const notHelpfulButton = document.createElement('button');
+                notHelpfulButton.classList.add('feedback-btn');
+                notHelpfulButton.innerHTML = '👎 Not Helpful';
+                notHelpfulButton.onclick = () => handleFeedback('not_helpful', notHelpfulButton, helpfulButton);
+                feedbackButtons.appendChild(notHelpfulButton);
+
+                messageContent.appendChild(messageDiv);
+                messageContent.appendChild(messageInfo);
+                messageContent.appendChild(feedbackButtons);
+
+            } else {
+                messageContent.appendChild(messageDiv);
+                messageContent.appendChild(messageInfo);
+            }
+
+            if (sender === 'user') {
+                messageWrapper.appendChild(messageContent);
+                messageWrapper.appendChild(avatar);
+            } else {
+                messageWrapper.appendChild(avatar);
+                messageWrapper.appendChild(messageContent);
+            }
+
+            chatBox.appendChild(messageWrapper);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function copyToClipboard(text, button) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalSymbol = button.innerHTML;
+                button.innerHTML = '&#x2713;'; // Checkmark symbol
+                button.classList.add('copied');
+                setTimeout(() => {
+                    button.innerHTML = originalSymbol;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        function handleFeedback(type, selectedButton, otherButton) {
+            console.log(`Feedback: ${type}`);
+            selectedButton.classList.add('selected');
+            otherButton.classList.remove('selected');
+            // Here you would typically send this feedback to your backend
+            // fetch('/submit_feedback', { method: 'POST', body: JSON.stringify({ message: messageText, feedback: type }) });
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => e.key === 'Enter' && sendMessage());
+
+        // Initial timestamp for the welcome message
+        document.querySelector('.ai-message .timestamp').innerText = formatTimestamp(new Date());
+    </script>
+</body>
+</html>
